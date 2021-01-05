@@ -1,4 +1,4 @@
-#ifndef FINITE_AUTOMATA_CPP
+﻿#ifndef FINITE_AUTOMATA_CPP
 #define FINITE_AUTOMATA_CPP
 
 #include "FiniteAutomata.h"
@@ -26,13 +26,13 @@ int FiniteAutomata::getCharIndFromAlphabet(const char& ch) const
 {
 	std::string s;
 	s = ch;
-//	assert(areAllCharactersFromAlphabet(s));
 
 	for (size_t i = 0; i < alphabet.size(); i++)
 	{
 		if (alphabet[i] == ch) return i;
 	}
-	return -1;
+	return -1;											//if the character is not from the alphabet 
+
 }
 
 char FiniteAutomata::getCharFromAlphabetByInd(int ind) const
@@ -241,6 +241,50 @@ FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutom
 	return res;
 }
 
+FiniteAutomata FiniteAutomata::Intersection(const FiniteAutomata& a1, const FiniteAutomata& a2) const
+{
+	//determine first
+	return Complement(Union(Complement(a1), Complement(a2)));
+}
+
+void FiniteAutomata::removeEpsilon()
+{
+	if (!emptyStrTransition) return;
+
+	//I know the empty transition symb is always last in the alphabet
+	//Should i make more validations that it really is the last?
+	for (size_t i = 0; i < states.size(); i++)
+	{
+		State* v1 = states[i];
+		int lastInd = states[i]->nextState.size() - 1;
+		int size = states[i]->nextState[lastInd].size();
+
+		for (size_t j = 0; j < size; j++)
+		{
+			State* v2 = states[i]->nextState[lastInd][j];
+
+			copyTransitions(v1, v2);
+			if (isStarting(v1) && !(isStarting(v2))) start.push_back(v2);
+			if (v2->accepting) v1->accepting = true;
+		}
+		v1->nextState[lastInd].clear();			//clears @ transition array
+	}
+
+	alphabet.pop_back();						//removes @ transition
+	emptyStrTransition = 0;
+}
+
+//not finished
+void FiniteAutomata::determine()
+{
+	if (emptyStrTransition) removeEpsilon();
+
+	/*
+	
+	*/
+
+}
+
 
 FiniteAutomata& FiniteAutomata::operator=(const FiniteAutomata& other)
 {
@@ -255,6 +299,7 @@ FiniteAutomata& FiniteAutomata::operator=(const FiniteAutomata& other)
 	return *this;
 }
 
+//not finished - should work with Eps trans
 //проверява дали от дадено състояние има път с буквите на даден низ до финално състояние
 bool FiniteAutomata::containsWordFrom(const State* st,const std::string& str) const
 {
@@ -284,6 +329,56 @@ bool FiniteAutomata::isStarting(const State* st) const
 		if (st == start[i]) return true;
 	}
 	return false;
+}
+
+//copies all transitions from v2 to v1
+void FiniteAutomata::copyTransitions(State* v1, State* v2)
+{
+	for (size_t i = 0; i < v2->nextState.size(); i++)
+	{
+		v1->nextState[i].insert(v1->nextState[i].end(), v2->nextState[i].begin(), v2->nextState[i].end());
+	}
+	//should i remove duplicate states in v1 
+}
+
+bool FiniteAutomata::isSink(const State* q)
+{
+	for (size_t i = 0; i < states.size(); i++)
+	{
+		if (states[i] != q) {
+			int size1 = states[i]->nextState.size();
+			for (size_t j = 0; j < size1; j++)
+			{
+				int size2 = states[i]->nextState[j].size();
+				for (size_t k = 0; k < size2; k++)
+				{
+					if (states[i]->nextState[j][k] == q)return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void FiniteAutomata::removeSinkNodes()
+{
+	int size = states.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		if (isSink(states[i])) {
+			if (isStarting(states[i])) {
+				start.erase(std::remove(start.begin(), start.end(), states[i]), start.end());   // erase-remove idiom
+			}
+			if (states[i]->accepting) {
+				acceptingStates.erase(std::remove(acceptingStates.begin(), acceptingStates.end(), states[i]),
+									  acceptingStates.end());
+			}
+			State* temp = states[i];
+			states.erase(std::remove(states.begin(), states.end(), states[i]), states.end());
+			delete temp;	//ok?
+			--i;
+		}
+	}
 }
 
 void FiniteAutomata::del()
