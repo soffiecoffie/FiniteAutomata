@@ -29,6 +29,7 @@ class FiniteAutomata
 	void removeSinkNodes();				 //test
 	void del();
 	void copy(const FiniteAutomata&);
+	std::vector<std::vector<State*>> getStateCombinations(std::vector<State*> arr, int k);
 public:
 	int a = 1;
 	//FiniteAutomata(const std::vector<char>&, const std::vector<State>&, const std::vector<State>&, const State&);

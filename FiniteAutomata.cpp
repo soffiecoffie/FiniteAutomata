@@ -279,10 +279,91 @@ void FiniteAutomata::determine()
 {
 	if (emptyStrTransition) removeEpsilon();
 
-	/*
-	
-	*/
+	FiniteAutomata result;
+	std::vector<std::vector<State*>> newStates;
+	std::vector<State*> v;
+	//add the states in the result states
+	newStates.push_back(v); //adding empty set //so if newstates[i].size==0 -> empty set
+	//int size = 0;
+	int stSize = states.size();
+	//for (size_t i = 0; i <= stSize; i++)
+	//{
+	//	size += combination(stSize, i);
+	//}
+	for (size_t i = 1; i < states.size(); i++)
+	{
+		std::vector<std::vector<State*>> ithCombination = getStateCombinations(states, i);
+		newStates.insert(newStates.end(), ithCombination.begin(), ithCombination.end());
 
+		ithCombination.clear();
+	}
+	//delete newStates on the bottom
+//	std::vector<std::vector<State*>> finalNewStates;
+
+	states.clear();
+	//filling the automata with new states
+	for (size_t i = 0; i < newStates.size(); i++)
+	{
+		states.push_back(new State());
+	}
+
+//	std::vector<State*> newStarts;
+	
+	int newStSize = newStates.size();
+	//choosing new start states
+	for (size_t i = 0; i < newStSize; i++)
+	{
+		if (newStates[i].size() == start.size()) {
+			int count = 0;
+			for (size_t j = 0; j < newStates[i].size(); j++)
+			{
+				for (size_t k = 0; k < start.size(); k++)
+				{
+					if (newStates[i][j] == start[k]) ++count;
+				}
+			}
+			if (count == start.size()) {
+				//clear everything in the start array and add the new start state
+				start.clear();
+				start.push_back(states[i]);//i-th states matches the i-th newState
+				//newStarts = newStates[i];//before
+				break;
+			}
+		}
+	}
+
+	//fill the accepting arr with the new states
+	acceptingStates.clear();
+	for (size_t i = 0; i < newStSize; i++)
+	{
+		for (size_t j = 0; j < newStates[i].size(); j++)
+		{
+			if (newStates[i][j]->accepting) {
+				states[i]->accepting == true;
+				acceptingStates.push_back(states[i]);
+				break;
+			}
+		}
+	}
+
+	//add transitions
+	for (size_t i = 0; i < newStSize; i++)
+	{
+		//to do
+	}
+
+	//remove unreachable states
+	removeSinkNodes();
+	
+	//free dynamic memory
+	for (size_t i = 0; i < newStSize; i++)
+	{
+		for (size_t j = 0;  j < newStates[i].size();  j++)
+		{
+			delete newStates[i][j];
+		}
+	}
+	newStates.clear();
 }
 
 
@@ -420,6 +501,58 @@ void FiniteAutomata::copy(const FiniteAutomata& other)
 		int ind = other.getStateIndFromAllStates(*other.start[i]);
 		start.push_back(states[ind]);
 	}
+}
+
+std::vector<std::vector<State*>> FiniteAutomata::getStateCombinations(std::vector<State*> arr, int k)
+{
+	std::vector<std::vector<State*>> result;
+	if (k == 0) return result;
+	if (k == 1) {
+		for (size_t i = 0; i < arr.size(); i++)
+		{
+			std::vector<State*> v;
+			v.push_back(arr[i]);
+			result.push_back(v);
+		}
+		return result;
+	}
+
+	int size = arr.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		std::vector<State*> v;
+		std::vector<State*> temp;
+		v.push_back(arr[i]);
+		temp = v;
+		for (size_t j = i + 1; j < size; j++)
+		{
+			v.push_back(arr[j]);
+			if (k > 2) {
+				std::vector<State*> temp2;
+				temp2 = v;
+				for (size_t l = j + 1; l < size; l++)
+				{
+					int save = l;
+					for (size_t m = 2; m < k; m++)
+					{
+						if (save >= size || v.size() > k) break;
+						else {
+							v.push_back(arr[save++]);
+						}
+					}
+					if (v.size() == k)
+						result.push_back(v);
+					v = temp2;
+				}
+			}
+			else {
+				result.push_back(v);
+			}
+			v = temp;
+		}
+	}
+
+	return result;
 }
 
 //FiniteAutomata FiniteAutomata::complement() const
