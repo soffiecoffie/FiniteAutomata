@@ -43,6 +43,9 @@ public:
 	FiniteAutomata Complement(const FiniteAutomata&) const;
 	FiniteAutomata Union(const FiniteAutomata&, const FiniteAutomata&) const;
 	FiniteAutomata Intersection(const FiniteAutomata&, const FiniteAutomata&) const;
+	FiniteAutomata Concatenation(const FiniteAutomata&, const FiniteAutomata&) const;//test
+	FiniteAutomata KleeneStar(const FiniteAutomata&) const;//test
+//	FiniteAutomata Concatenation(FiniteAutomata, FiniteAutomata) const;
 	void removeEpsilon();//test
 	void determine();//test
 	FiniteAutomata& operator=(const FiniteAutomata&);

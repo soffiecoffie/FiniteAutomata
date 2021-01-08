@@ -193,22 +193,9 @@ FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutom
 		final.clear();
 	}
 
-
-	/*
-
-		FIX THIS: ALPHABET MAY BE DIFFERENT FOR A1 AND A2 SO YOU MIGHT HAVE TO ADD TRANSITIONS FOR SYMBOLS THAT
-		A1 DOESN'T HAVE and they have to be in the right order!!
-		ако а има транзишън за първата буква скипва ако не добавя празен масив
-		бтв тр на чисто да започнеш да им ги правиш състоянията
-		запази някъде старите
-		I MIGHT HAVE ALREADY ADDED @ if a1 or a2 had it so maybe i should think of something else instead of just adding it
-		to the alphabet v
-
-	*/
-
 	aResSize = res.alphabet.size();
 
-	//creating a new Start state 
+	//creating a new Start state with eps transitions to the start states of a1 and a2 
 	State* st = new State();
 	for (size_t i = 0; i < aResSize; i++)
 	{
@@ -247,6 +234,225 @@ FiniteAutomata FiniteAutomata::Intersection(const FiniteAutomata& a1, const Fini
 	return Complement(Union(Complement(a1), Complement(a2)));
 }
 
+
+
+FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const FiniteAutomata& a2) const
+{
+	FiniteAutomata result;
+	result.states = a1.states;
+	result.states.insert(result.states.end(), a2.states.begin(), a2.states.end());
+
+	result.start = a1.start;
+	result.acceptingStates = a2.acceptingStates;
+
+	for (size_t i = 0; i < a1.alphabet.size(); i++) //not adding the empty str yet
+	{
+		if (a1.alphabet[i] == '@') break;
+		else result.alphabet.push_back(a1.alphabet[i]);
+	}
+
+	//alphabet might have @ so the sizes will be all wrong
+
+	int aSize = a2.alphabet.size();
+	int aResSize = result.alphabet.size();
+	for (int i = 0; i < aSize; i++)
+	{
+		if (a2.alphabet[i] != '@') { //so i dont add the empty str yet
+			for (int j = 0; j < aResSize; j++)
+			{
+				if (a2.alphabet[i] == result.alphabet[j]) break;
+				else if (j == aResSize - 1) {
+					result.alphabet.push_back(a2.alphabet[i]);
+				}
+			}
+		}
+	}
+
+	//fix when they have empty trans from begining
+	FiniteAutomata res(result);
+	result.states.clear();
+	result.acceptingStates.clear();
+	result.start.clear();
+	result.alphabet.clear();
+
+
+	int a1StatesSize = a1.states.size();
+	res.alphabet.push_back('@'); //adding the empty str
+	res.emptyStrTransition = true;
+	//int a2StatesSize = a2.states.size();
+
+	for (int i = 0; i < a1StatesSize; i++)
+	{
+		//all accepting states are no more
+		res.states[i]->accepting = false;
+
+		//change transitions
+		std::vector<std::vector<State*>> temp = res.states[i]->nextState;
+		std::vector<std::vector<State*>> final;
+		std::vector<State*> empty;
+
+		res.states[i]->nextState.clear();
+		for (int j = 0; j < res.alphabet.size(); j++)
+		{
+			if (a1.alphabet.size() > j && a1.getCharFromAlphabetByInd(j) == res.alphabet[j])
+			{
+				final.push_back(temp[j]);
+			}
+			else if (a1.getCharIndFromAlphabet(res.alphabet[j]) != -1)
+			{
+				int ind = a1.getCharIndFromAlphabet(res.alphabet[j]);
+				final.push_back(temp[ind]);
+			}
+			else
+			{
+				final.push_back(empty);
+			}
+		}
+		res.states[i]->nextState = final;
+
+		temp.clear(); //need i clear it ?
+		final.clear();
+	}
+
+	for (int i = a1StatesSize; i < res.states.size(); i++)
+	{
+		std::vector<std::vector<State*>> temp = res.states[i]->nextState;
+		std::vector<std::vector<State*>> final;
+		std::vector<State*> empty;
+
+		res.states[i]->nextState.clear();//clear doesnt delete dynamic memory right
+		for (int j = 0; j < res.alphabet.size(); j++)
+		{
+			if (a2.alphabet.size() > j && a2.getCharFromAlphabetByInd(j) == res.alphabet[j])
+			{
+				final.push_back(temp[j]);
+			}
+			else if (a2.getCharIndFromAlphabet(res.alphabet[j]) != -1)
+			{
+				int ind = a2.getCharIndFromAlphabet(res.alphabet[j]);
+				final.push_back(temp[ind]);
+			}
+			else
+			{
+				final.push_back(empty);
+			}
+		}
+		res.states[i]->nextState = final;
+
+		temp.clear(); //need i clear it ?
+		final.clear();
+	}
+
+
+	for (size_t i = 0; i < a1.states.size(); i++)
+	{
+		if (a1.states[i]->accepting) {
+			for (size_t j = 0; j < a2.start.size(); j++)
+			{
+				int ind = a2.getStateIndFromAllStates(*a2.start[j]) + a1.states.size();
+				res.states[i]->nextState[alphabet.size() - 1].push_back(res.states[ind]);
+			}
+		}
+	}
+
+
+	//determine
+	//removeEps?
+	return result;
+}
+
+FiniteAutomata FiniteAutomata::KleeneStar(const FiniteAutomata& q) const
+{
+	FiniteAutomata result(q);
+
+	//adding an empty empty-string transition for every state
+	if (!q.emptyStrTransition)
+	{
+		result.alphabet.push_back('@');
+		result.emptyStrTransition = true;
+		for (size_t i = 0; i < result.states.size(); i++)
+		{
+			std::vector<State*> empty;
+			result.states[i]->nextState.push_back(empty);
+		}
+	}
+
+	//creating a new Start state with eps transition to the start state of q
+	State* st = new State();   //is it going to disappear at the end of func? tag
+	st->accepting = true;
+	int aResSize = result.alphabet.size();
+
+	//adding empty transitions from the start state with every symbol
+	//and adding empty-string transitions from the new start to the old start states
+	for (size_t i = 0; i < aResSize; i++)
+	{
+		std::vector<State*> v;
+		st->nextState.push_back(v);
+		if (i == aResSize - 1)   //last symbol of alphabet is the empty str
+		{
+			int ind;
+			for (size_t j = 0; j < q.start.size(); j++)
+			{
+				ind = q.getStateIndFromAllStates(*q.start[j]);
+				st->nextState[i].push_back(result.states[ind]);
+			}
+		}
+	}
+	result.start.clear();
+
+	result.states.push_back(st);
+	result.start.push_back(st);
+	result.acceptingStates.push_back(st);
+
+	//adding an empty-string transition from all accepting states to the new start state
+	for (size_t i = 0; i < result.acceptingStates.size(); i++)
+	{
+		result.acceptingStates[i]->nextState[aResSize - 1].push_back(result.start[0]);
+	}
+
+	//determine?
+	//remove emptystr?
+	return result;
+}
+
+
+
+/*
+FiniteAutomata FiniteAutomata::Concatenation(FiniteAutomata a1, FiniteAutomata a2) const
+{
+	//does it delete a1 and a2 at the end?? because they are copies
+	for (size_t i = 0; i < a1.acceptingStates.size(); i++)
+	{
+		a1.acceptingStates[i]->accepting = false;
+	}
+	a1.acceptingStates.clear();
+
+	for (size_t i = 0; i < a2.acceptingStates.size(); i++)
+	{
+		a1.acceptingStates.push_back(a2.acceptingStates[i]);
+	}
+
+	for (size_t i = 0; i < a1.states.size(); i++)
+	{
+		a1.states.insert(a1.states.end(), a2.states.begin(), a2.states.end());
+	}
+
+	a1.emptyStrTransition = true;
+
+	for (size_t i = 0; i < a1.states.size(); i++)
+	{
+		for (size_t j = 0; j < a1.; j++)
+		{
+
+		}
+		a1.states
+	}
+
+
+
+	return result;
+}
+*/
 void FiniteAutomata::removeEpsilon()
 {
 	if (!emptyStrTransition) return;
@@ -305,6 +511,13 @@ void FiniteAutomata::determine()
 	for (size_t i = 0; i < newStates.size(); i++)
 	{
 		states.push_back(new State());
+		/* is bellow thing needed? */
+		for (size_t j = 0; j < alphabet.size(); j++)
+		{
+			//запълвам масива с толкова елементи колкото има азбуката ми
+			std::vector<State*> v;
+			states[i]->nextState.push_back(v);
+		}
 	}
 
 //	std::vector<State*> newStarts;
@@ -349,7 +562,58 @@ void FiniteAutomata::determine()
 	//add transitions
 	for (size_t i = 0; i < newStSize; i++)
 	{
-		//to do
+
+		for (size_t k = 0; k < alphabet.size(); k++)
+		{
+			std::vector<State*> v;
+			for (size_t j = 0; j < newStates[i].size(); j++)
+			{
+				for (size_t m = 0; m < newStates[i][j]->nextState[k].size(); m++)
+				{
+//					if not already in 
+					bool repeats = 0;
+					for (size_t h = 0; h < v.size(); h++)
+					{
+						if (newStates[i][j]->nextState[k][m] == v[h]) {
+							repeats = true;
+							break;
+						}
+					}
+					if(!repeats)
+						v.push_back(newStates[i][j]->nextState[k][m]);
+				}
+
+				//if v empty
+			}
+			int ind = -1;
+			if (!v.empty()) {
+				for (size_t t = 0; t < newStSize; t++)
+				{
+					if (newStates[t].size() == v.size()) {
+						int count = 0;
+						for (size_t w = 0; w < newStates[t].size(); w++)
+						{
+							for (size_t p = 0; p < v.size(); p++)
+							{
+								//v's elements are all different
+								if (newStates[t][w] == v[p]) ++count;
+							}
+						}
+						if (count == v.size()) {
+							ind = t;
+							break;
+						}
+					}
+				}
+				if (ind == -1)std::cout << "bad bad something go wrong fix fix";
+				v.clear();
+				states[i]->nextState[k].push_back(states[ind]);// do i even have nextstate[k] to even push in it
+			}
+			else {
+				states[i]->nextState[k].push_back(states[0]); //the empty state
+			}
+
+		}
 	}
 
 	//remove unreachable states
