@@ -630,6 +630,13 @@ void FiniteAutomata::determine()
 	newStates.clear();
 }
 
+FiniteAutomata FiniteAutomata::regexToAutomata(std::string regex)
+{
+	regex = removeSpaces(regex);
+
+	return FiniteAutomata();
+}
+
 
 FiniteAutomata& FiniteAutomata::operator=(const FiniteAutomata& other)
 {
@@ -724,6 +731,63 @@ void FiniteAutomata::removeSinkNodes()
 			--i;
 		}
 	}
+}
+
+//makes an automata that accepts a one letter word from a given letter
+FiniteAutomata FiniteAutomata::makeOneLetterAutomata(char ch) const
+{
+	FiniteAutomata result;
+	result.alphabet.push_back(ch);
+	State* q1 = new State();
+	State* q2 = new State();
+	q2->accepting = true;
+	result.states.push_back(q1);
+	result.states.push_back(q2);
+
+	result.start.push_back(q1);
+	result.acceptingStates.push_back(q2);
+
+	//delete q1;//yes or no
+	//delete q2;
+	return result;
+}
+
+void FiniteAutomata::addTheEmptyWord()
+{
+	if (!emptyStrTransition) {
+		emptyStrTransition = true;
+		alphabet.push_back('@');
+		for (size_t i = 0; i < states.size(); i++)
+		{
+			std::vector<State*> empty;
+			states[i]->nextState.push_back(empty);
+		}
+	}
+
+	//creating a new start state that's also accepting so the empty word belongs to the language
+	State* st = new State();
+	st->accepting = true;
+	int aSize = alphabet.size();
+	for (size_t i = 0; i < aSize; i++)
+	{
+		std::vector<State*> v;
+		st->nextState.push_back(v);
+		if (i == aSize - 1)   //last symbol of alphabet is the empty str
+		{
+			//the new starting state will point towards all starting states of the original automata
+			//with an empty string transition
+			for (size_t j = 0; j < start.size(); j++)
+			{
+				st->nextState[i].push_back(states[j]);
+			}
+		}
+		//		v.clear();
+	}
+
+	start.clear();
+	start.push_back(st);
+	states.push_back(st);
+	acceptingStates.push_back(st);
 }
 
 void FiniteAutomata::del()

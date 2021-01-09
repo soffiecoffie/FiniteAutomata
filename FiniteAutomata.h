@@ -27,6 +27,8 @@ class FiniteAutomata
 	void copyTransitions(State*, State*);//test
 	bool isSink(const State*);			 //test
 	void removeSinkNodes();				 //test
+	FiniteAutomata makeOneLetterAutomata(char) const; //test
+	void addTheEmptyWord();
 	void del();
 	void copy(const FiniteAutomata&);
 	std::vector<std::vector<State*>> getStateCombinations(std::vector<State*> arr, int k);
@@ -48,6 +50,7 @@ public:
 //	FiniteAutomata Concatenation(FiniteAutomata, FiniteAutomata) const;
 	void removeEpsilon();//test
 	void determine();//test
+	FiniteAutomata regexToAutomata(std::string);//test and add bool for determination?
 	FiniteAutomata& operator=(const FiniteAutomata&);
 
 	bool containsWord(const std::string&) const;
