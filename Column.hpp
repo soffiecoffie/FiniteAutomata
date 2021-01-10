@@ -6,6 +6,9 @@
 #include <cassert>
 #include "Column.h"
 #include "Utils.h"
+using namespace number_utils;
+using namespace string_utils;
+
 
 /** @brief конструктор с параметри */
 template<typename T>

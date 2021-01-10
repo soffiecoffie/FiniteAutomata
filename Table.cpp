@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include <iostream>
 #include <cassert>
+using namespace string_utils;
 
 /** @brief изтрива динамичната памет */
 void Table::del()
