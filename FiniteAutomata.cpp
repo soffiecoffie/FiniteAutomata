@@ -61,14 +61,13 @@ FiniteAutomata::FiniteAutomata(const std::vector<char>& alpha, const std::vector
 /** @brief копи конструктор */
 FiniteAutomata::FiniteAutomata(const FiniteAutomata& other): alphabet(other.alphabet), emptyStrTransition(other.emptyStrTransition)
 {
-	std::cout << "copying "<<other.a<< "   ";
+	//std::cout << "copying "<<other.a<< "   ";
 	copy(other);
 }
 
 /** @brief деструктор */
 FiniteAutomata::~FiniteAutomata()
 {
-	std::cout << a;
 	del();
 }
 
@@ -76,7 +75,6 @@ FiniteAutomata::~FiniteAutomata()
 FiniteAutomata FiniteAutomata::Complement(const FiniteAutomata& automata) const
 {
 	FiniteAutomata result(automata);
-
 	//Ако автоматът е недетерминиран, първо трябва да се детерминира
 	if (!result.isDeterministic()) {
 		result.determine();
@@ -86,7 +84,6 @@ FiniteAutomata FiniteAutomata::Complement(const FiniteAutomata& automata) const
 		if (result.states[i]->accepting == true) result.states[i]->accepting = false;
 		else result.states[i]->accepting = true;
 	}
-	result.a = 3;
 	return result;
 }
 
@@ -142,7 +139,6 @@ FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutom
 		res.states[i]->nextState.clear();
 		for (int j = 0; j < res.alphabet.size(); j++)
 		{
-			//if (a1.alphabet.size() > j && a1.getCharFromAlphabetByInd(j) == res.alphabet[j])
 			if (a1.alphabet.size() > j && a1.alphabet[j] == res.alphabet[j])
 			{
 				final.push_back(temp[j]);
@@ -159,7 +155,7 @@ FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutom
 		}
 		res.states[i]->nextState = final;
 
-		temp.clear(); //need i clear it ?
+		temp.clear();
 		final.clear();
 	}
 
@@ -172,7 +168,6 @@ FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutom
 		res.states[i]->nextState.clear();
 		for (int j = 0; j < res.alphabet.size(); j++)
 		{
-			//if (a2.alphabet.size() > j && a2.getCharFromAlphabetByInd(j) == res.alphabet[j])
 			if (a2.alphabet.size() > j && a2.alphabet[j] == res.alphabet[j])
 			{
 				final.push_back(temp[j]);
@@ -189,7 +184,7 @@ FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutom
 		}
 		res.states[i]->nextState = final;
 
-		temp.clear(); //need i clear it ?
+		temp.clear(); 
 		final.clear();
 	}
 
@@ -263,7 +258,6 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 			}
 		}
 	}
-
 	FiniteAutomata res(result);
 	result.states.clear();
 	result.acceptingStates.clear();
@@ -277,7 +271,7 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 
 	for (int i = 0; i < a1StatesSize; i++)
 	{
-		//всички приемащи състояния стават неприемащи
+		//всички приемащи състояния от а1 стават неприемащи
 		res.states[i]->accepting = false;
 
 		std::vector<std::vector<State*>> temp = res.states[i]->nextState;
@@ -287,7 +281,6 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 		res.states[i]->nextState.clear();
 		for (int j = 0; j < res.alphabet.size(); j++)
 		{
-			//if (a1.alphabet.size() > j && a1.getCharFromAlphabetByInd(j) == res.alphabet[j])
 			if (a1.alphabet.size() > j && a1.alphabet[j] == res.alphabet[j])
 			{
 				final.push_back(temp[j]);
@@ -317,7 +310,6 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 		res.states[i]->nextState.clear();
 		for (int j = 0; j < res.alphabet.size(); j++)
 		{
-			//if (a2.alphabet.size() > j && a2.getCharFromAlphabetByInd(j) == res.alphabet[j])
 			if (a2.alphabet.size() > j && a2.alphabet[j] == res.alphabet[j])
 			{
 				final.push_back(temp[j]);
@@ -334,7 +326,7 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 		}
 		res.states[i]->nextState = final;
 
-		temp.clear(); //need i clear it ?
+		temp.clear(); 
 		final.clear();
 	}
 
@@ -344,15 +336,13 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 			for (size_t j = 0; j < a2.start.size(); j++)
 			{
 				int ind = a2.getStateIndFromAllStates(*a2.start[j]) + a1.states.size();
-				res.states[i]->nextState[alphabet.size() - 1].push_back(res.states[ind]);
+				res.states[i]->nextState[res.alphabet.size() - 1].push_back(res.states[ind]);
 			}
 		}
 	}
 
-
 	//determine
-	//removeEps?
-	return result;
+	return res;
 }
 
 /** @brief връща автомат, който е итерацията на даден автомат */
@@ -373,9 +363,15 @@ FiniteAutomata FiniteAutomata::KleeneStar(const FiniteAutomata& q) const
 	}
 
 	//създавам ново начално състояние с епсилон преход към началното състояние на q
-	State* st = new State();   //is it going to disappear at the end of func? tag
+	State* st = new State();   
 	st->accepting = true;
 	int aResSize = result.alphabet.size();
+
+	//добавям епсилон преход от всички финални състояния към новото начално състояние
+	for (size_t i = 0; i < result.acceptingStates.size(); i++)
+	{
+		result.acceptingStates[i]->nextState[aResSize - 1].push_back(st);
+	}
 
 	//добавям празни преходи от началното състояние с всеки символ
 	//добявам епислон преход от новото начално към старите начални състояния
@@ -399,14 +395,8 @@ FiniteAutomata FiniteAutomata::KleeneStar(const FiniteAutomata& q) const
 	result.start.push_back(st);
 	result.acceptingStates.push_back(st);
 
-	//добавям епсилон преход от всички финални състояния към новото начално състояние
-	for (size_t i = 0; i < result.acceptingStates.size(); i++)
-	{
-		result.acceptingStates[i]->nextState[aResSize - 1].push_back(result.start[0]);
-	}
 
 	//determine?
-	//remove emptystr?
 	return result;
 }
 
@@ -414,18 +404,32 @@ FiniteAutomata FiniteAutomata::KleeneStar(const FiniteAutomata& q) const
 void FiniteAutomata::removeEpsilon()
 {
 	if (!emptyStrTransition) return;
+	FiniteAutomata helper = *this;
 
 	//Празната дума винаги е последна в азбуката
-	//Should i make more validations that it really is the last?
-	for (size_t i = 0; i < states.size(); i++)
+	for (size_t i = 0; i < states.size(); i++) 
 	{
 		State* v1 = states[i];
-		int lastInd = states[i]->nextState.size() - 1;
+		int lastInd = alphabet.size() - 1;
 		int size = states[i]->nextState[lastInd].size();
 
 		for (size_t j = 0; j < size; j++)
 		{
 			State* v2 = states[i]->nextState[lastInd][j];
+			
+			//в случай, че v2 има епсилон преход към друго състояние, което има епсилон преходи, трябва първо да 
+			//копирам преходите на другото състояние, иначе v2 ще изпусне някои преходи
+			if (v2->nextState[lastInd].size() > 0) {
+				int size2 = v2->nextState[lastInd].size();
+
+				for (size_t k = 0; k < size2; k++)
+				{
+					State* v3 = v2->nextState[lastInd][k];
+					copyTransitions(v2, v3);
+					if (isStarting(v2) && !(isStarting(v3))) start.push_back(v3);
+					if (v3->accepting) v2->accepting = true;
+				}
+			}
 
 			copyTransitions(v1, v2);
 			if (isStarting(v1) && !(isStarting(v2))) start.push_back(v2);
@@ -464,7 +468,6 @@ void FiniteAutomata::determine()
 	for (size_t i = 0; i < newStates.size(); i++)
 	{
 		states.push_back(new State());
-		// is bellow thing needed? 
 		for (size_t j = 0; j < alphabet.size(); j++)
 		{
 			//запълвам масива с толкова елементи колкото има азбуката ми
@@ -494,7 +497,6 @@ void FiniteAutomata::determine()
 			}
 		}
 	}
-
 	//запълвам масива за финални състояния с новите състояния
 	acceptingStates.clear();
 	for (size_t i = 0; i < newStSize; i++)
@@ -502,13 +504,13 @@ void FiniteAutomata::determine()
 		for (size_t j = 0; j < newStates[i].size(); j++)
 		{
 			if (newStates[i][j]->accepting) {
-				states[i]->accepting == true;
+				states[i]->accepting = true;
 				acceptingStates.push_back(states[i]);
 				break;
 			}
 		}
 	}
-
+	std::cout << "accepting ---  " << acceptingStates.size() << " -----";
 	//добавям преходите
 	for (size_t i = 0; i < newStSize; i++)
 	{
@@ -555,7 +557,7 @@ void FiniteAutomata::determine()
 				}
 				if (ind == -1)std::cout << "bad bad something go wrong fix fix";
 				v.clear();
-				states[i]->nextState[k].push_back(states[ind]);	// do i even have nextstate[k] to even push in it
+				states[i]->nextState[k].push_back(states[ind]);	
 			}
 			else {
 				states[i]->nextState[k].push_back(states[0]);	//"празното множество"
@@ -567,15 +569,15 @@ void FiniteAutomata::determine()
 	//премахвам недостижимите състояния
 	removeSinkNodes();
 	
-	//освобождавам динамичната памет
-	for (size_t i = 0; i < newStSize; i++)
-	{
-		for (size_t j = 0;  j < newStates[i].size();  j++)
-		{
-			delete newStates[i][j];
-		}
-	}
-	newStates.clear();
+	////освобождавам динамичната памет
+	//for (size_t i = 0; i < newStSize; i++)
+	//{
+	//	for (size_t j = 0;  j < newStates[i].size();  j++)
+	//	{
+	//		delete newStates[i][j];
+	//	}
+	//}
+	//newStates.clear();
 }
 
 /** @brief връща автомат, създаден от даден регулярен израз */
@@ -653,7 +655,6 @@ FiniteAutomata& FiniteAutomata::operator=(const FiniteAutomata& other)
 	return *this;
 }
 
-//not finished - should work with Eps trans
 /** @brief проверява дали от дадено състояние има път с буквите на даден низ до финално състояние */
 bool FiniteAutomata::containsWordFrom(const State* st, const std::string& str) const
 {
@@ -666,7 +667,7 @@ bool FiniteAutomata::containsWordFrom(const State* st, const std::string& str) c
 		int size = st->nextState[ind].size();
 		for (size_t i = 0; i < size; i++)
 		{
-			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;	  //str.size()-1?
+			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;	 
 		}
 	}
 	if (isRandSymbolInAlphabet()) {				//Проверявам преходите със символа за произволен символ, ако е в азбуката
@@ -688,100 +689,6 @@ bool FiniteAutomata::containsWordFrom(const State* st, const std::string& str) c
 	return false;
 }
 
-
-//not finished - should work with Eps trans
-/** @brief проверява дали от дадено състояние има път с буквите на даден низ до финално състояние */
-/*bool FiniteAutomata::containsWordFrom(const State* st, const std::string& str) const
-{
-	if (str.size() == 0 && st->accepting) return true;
-
-	char ch = str[0];
-	int ind = getCharIndFromAlphabet(ch);
-
-	if (ind != -1 && isRandSymbolInAlphabet()) {
-		int ind3 = -1;
-		if (emptyStrTransition) {
-			ind3 = alphabet.size() - 1; //празната дума винаги е на последно място в азбуката
-		}
-
-		int ind2 = getCharIndFromAlphabet('?');
-		if (st->nextState[ind].size() == 0 && st->nextState[ind2].size() == 0
-			&& (ind3 == -1 || st->nextState[ind3].size() == 0)) return false;
-
-		int size = st->nextState[ind].size();
-		for (size_t i = 0; i < size; i++)
-		{
-			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;	  //str.size()-1?
-		}
-		size = st->nextState[ind2].size();
-		for (size_t i = 0; i < size; i++)
-		{
-			if (containsWordFrom(st->nextState[ind2][i], str.substr(1, str.size()))) return true;//str.size()-1?
-		}
-		size = st->nextState[ind3].size();
-		for (size_t i = 0; i < size; i++)
-		{
-			if (ind3 != -1 && containsWordFrom(st->nextState[ind3][i], str))return true;
-		}
-	}
-	else if (ind != -1 || isRandSymbolInAlphabet()) {
-		
-		if (isRandSymbolInAlphabet()) 
-			ind = getCharIndFromAlphabet('?');
-
-		int ind2 = -1;
-		if (emptyStrTransition) {
-			ind2 = alphabet.size() - 1; //празната дума винаги е на последно място в азбуката
-		}
-
-		if (st->nextState[ind].size() == 0 && (ind2==-1 || st->nextState[ind2].size() == 0)) return false;
-		
-		int size = st->nextState[ind].size();
-		for (size_t i = 0; i < size; i++)
-		{
-			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;
-		}
-		size = st->nextState[ind2].size();
-		for (size_t i = 0; i < size; i++)
-		{
-			if (ind2 != -1 && containsWordFrom(st->nextState[ind2][i], str)) return true;
-		}
-	}
-	else if (emptyStrTransition) {
-		ind = alphabet.size() - 1;
-		if (st->nextState[ind].size() == 0) return false;
-		int size = st->nextState[ind].size();
-		for (size_t i = 0; i < size; i++)
-		{
-			if (ind != -1 && containsWordFrom(st->nextState[ind][i], str)) return true;
-		}
-	}
-	return false;
-}
-*/
-
-//not finished - should work with Eps trans
-/** @brief проверява дали от дадено състояние има път с буквите на даден низ до финално състояние */
-/*bool FiniteAutomata::containsWordFrom(const State* st,const std::string& str) const
-{
-	if (str.size() == 0 && st->accepting) return true;
-	
-	char ch = str[0];
-	int ind = getCharIndFromAlphabet(ch);
-	
-	if (ind != -1) {
-
-		if (st->nextState[ind].size() == 0) return false;
-		int size = st->nextState[ind].size();
-		for (size_t i = 0; i < size; i++)
-		{
-			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;
-		}
-	}
-
-	return false;
-}
-*/
 /** @brief проверява дали дадено състояние е начално */
 bool FiniteAutomata::isStarting(const State* st) const
 {
@@ -796,16 +703,30 @@ bool FiniteAutomata::isStarting(const State* st) const
 /** @brief добавя всички преходи на дадено състояние в друго дадено състояние */
 void FiniteAutomata::copyTransitions(State* v1, State* v2)
 {
+	bool flag = false;
 	for (size_t i = 0; i < v2->nextState.size(); i++)
 	{
-		v1->nextState[i].insert(v1->nextState[i].end(), v2->nextState[i].begin(), v2->nextState[i].end());
+		for (size_t j = 0; j < v2->nextState[i].size(); j++)
+		{
+			//проверявам дали състоянието не е вътре вече
+			for (size_t k = 0; k < v1->nextState[i].size(); k++)
+			{
+				if (v1->nextState[i][k] == v2->nextState[i][j]) flag = true;
+			}
+			//ако състоянието не се повтаря ще го добавя, иначе го пропускам
+			if(!flag)
+				v1->nextState[i].push_back(v2->nextState[i][j]);
+			else {
+				flag = false;
+			}
+		}
 	}
-	//should i remove duplicate states in v1 
 }
 
 /** @brief проверява дали дадено състояние е недостижимо */
-bool FiniteAutomata::isSink(const State* q)
+bool FiniteAutomata::isSink(const State* q) const
 {
+	if (isStarting(q))return false;
 	for (size_t i = 0; i < states.size(); i++)
 	{
 		if (states[i] != q) {
@@ -815,10 +736,21 @@ bool FiniteAutomata::isSink(const State* q)
 				int size2 = states[i]->nextState[j].size();
 				for (size_t k = 0; k < size2; k++)
 				{
-					if (states[i]->nextState[j][k] == q)return true;
+					if (states[i]->nextState[j][k] == q)return false;
 				}
 			}
 		}
+	}
+
+	return true;
+}
+
+/** @brief проверява дали има недостижими състояния в автомата */
+bool FiniteAutomata::areThereSinks() const
+{
+	for (size_t i = 0; i < states.size(); i++)
+	{
+		if (isSink(states[i])) return true;
 	}
 	return false;
 }
@@ -826,21 +758,22 @@ bool FiniteAutomata::isSink(const State* q)
 /** @brief премахва недостижимите състояния */
 void FiniteAutomata::removeSinkNodes()
 {
-	int size = states.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		if (isSink(states[i])) {
-			if (isStarting(states[i])) {
-				start.erase(std::remove(start.begin(), start.end(), states[i]), start.end());   // erase-remove idiom
+	while (areThereSinks()) {
+		for (size_t i = 0; i < states.size(); i++)
+		{
+			if (isSink(states[i])) {
+				if (isStarting(states[i])) {
+					start.erase(std::remove(start.begin(), start.end(), states[i]), start.end());   // erase-remove idiom
+				}
+				if (states[i]->accepting) {
+					acceptingStates.erase(std::remove(acceptingStates.begin(), acceptingStates.end(), states[i]),
+						acceptingStates.end());
+				}
+				State* temp = states[i];
+				states.erase(std::remove(states.begin(), states.end(), states[i]), states.end());
+				delete temp;
+				--i;
 			}
-			if (states[i]->accepting) {
-				acceptingStates.erase(std::remove(acceptingStates.begin(), acceptingStates.end(), states[i]),
-									  acceptingStates.end());
-			}
-			State* temp = states[i];
-			states.erase(std::remove(states.begin(), states.end(), states[i]), states.end());
-			delete temp;	//ok?
-			--i;
 		}
 	}
 }
@@ -853,53 +786,19 @@ FiniteAutomata FiniteAutomata::makeOneLetterAutomata(char ch) const
 	State* q1 = new State();
 	State* q2 = new State();
 	q2->accepting = true;
+
 	result.states.push_back(q1);
 	result.states.push_back(q2);
 
 	result.start.push_back(q1);
 	result.acceptingStates.push_back(q2);
 
-	//delete q1;//yes or no
-	//delete q2;
+	//добавям преходи
+	q1->nextState.push_back(std::vector<State*>());
+	q2->nextState.push_back(std::vector<State*>());
+	q1->nextState[0].push_back(q2);
+
 	return result;
-}
-
-/** @brief добавя празната дума в езика на автомат  */
-void FiniteAutomata::addTheEmptyWord()
-{
-	if (!emptyStrTransition) {
-		emptyStrTransition = true;
-		alphabet.push_back('@');
-		for (size_t i = 0; i < states.size(); i++)
-		{
-			std::vector<State*> empty;
-			states[i]->nextState.push_back(empty);
-		}
-	}
-
-	State* st = new State();
-	st->accepting = true;
-	int aSize = alphabet.size();
-	for (size_t i = 0; i < aSize; i++)
-	{
-		std::vector<State*> v;
-		st->nextState.push_back(v);
-		if (i == aSize - 1)   //последният символ в азбуката е празната дума
-		{
-			//новото начално състояние ще сочи към всички начални състояния на оригиналния автомат
-			//с епсилон преход
-			for (size_t j = 0; j < start.size(); j++)
-			{
-				st->nextState[i].push_back(states[j]);
-			}
-		}
-		//		v.clear();
-	}
-
-	start.clear();
-	start.push_back(st);
-	states.push_back(st);
-	acceptingStates.push_back(st);
 }
 
 /** @brief връща следващия елемент от даден низ на регулярен израз от дадена позиция в низа  */
@@ -998,7 +897,8 @@ void FiniteAutomata::copy(const FiniteAutomata& other)
 /** @brief връща масив от комбинациите(без повторения) на състоянията, като всяка комбинация е отделен масив  */
 std::vector<std::vector<State*>> FiniteAutomata::getStateCombinations(std::vector<State*> arr, int k)
 {
-	//k е броят на състоянията за всяка комбинация, т.е ако k==2 комбинациите на a,b,c ще са от по 2 елемента като ab, ac, bc
+	// k е броят на състоянията за всяка комбинация, т.е ако k==2 комбинациите на
+	// a,b,c ще са от по 2 елемента като ab, ac, bc
 	std::vector<std::vector<State*>> result;
 	if (k == 0) return result;
 	if (k == 1) {
@@ -1061,22 +961,6 @@ bool FiniteAutomata::containsWord(const std::string& str) const
 	return false;
 }
 
-
-
-/** @brief проверява дали дадена дума принадлежи на езика на автомата  */
-/*
-bool FiniteAutomata::containsWord(const std::string& str) const
-{
-	if (!areAllCharactersFromAlphabet(str)) return false;
-	int size = start.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		if (containsWordFrom(start[i], str)) return true;
-	}
-	return false;
-}*/
-
-//ако има състояние с 0 или повече от 1 преходи със съответна буква значи е недетерминиран  tag
 /** @brief проверавя дали автоматът е детерминиран  */
 bool FiniteAutomata::isDeterministic() const
 {
@@ -1084,9 +968,12 @@ bool FiniteAutomata::isDeterministic() const
 	{
 		for (size_t j = 0; j < states[i]->nextState.size(); j++)
 		{
-			if (states[i]->nextState[j].size() > 1 || states[i]->nextState[j].size() < 1) return false;
+			//ако автоматът е детерминиран, всяко състояние ще има точно един преход с всяка буква
+			if (states[i]->nextState[j].size() != 1 ) return false;
 		}
 	}
+	//детерминираните автомати имат само едно начално състояние и не работят с епсилон преходи
+	if (start.size() != 1 || emptyStrTransition)return false;
 
 	return true;
 }
@@ -1098,8 +985,16 @@ void FiniteAutomata::getInfo() const
 	std::cout << "> Information\n";
 	std::cout << "- The automata is ";
 	if (isDeterministic()) std::cout << "deterministic with "<< sSize<<" states.\n";
-	else std::cout << "nondeterministic with " << sSize << " states.\n";
+	else {
+		std::cout << "nondeterministic with " << sSize << " states.\n";
+		if (start.size() == 1)
+			std::cout << "- There is " << 1 << " starting state.\n";
+		else std::cout << "- There are " << start.size() << " starting states.\n";
+	}
 
+	if(acceptingStates.size() == 1)
+		std::cout << "- There is " << 1 << " accepting state.\n";
+	else std::cout << "- There are " << acceptingStates.size() << " accepting states.\n";
 	std::cout << "- Alphabet = {";
 	int aSize = alphabet.size();
 	for (int i = 0; i < (aSize - 1); i++)
@@ -1112,8 +1007,6 @@ void FiniteAutomata::getInfo() const
 
 	if (sSize > 0) {
 		std::cout << "\n- Delta (transitions):\n\n";
-
-
 
 		std::vector<std::string> s(sSize, "q");
 		for (int i = 0; i < sSize; i++)
@@ -1128,7 +1021,7 @@ void FiniteAutomata::getInfo() const
 		arr[0] = new Column<std::string>("States", "string", s, sSize);
 
 		std::string name;
-		std::string set = "{"; //if its deter make it to be without the set print !!tag
+		std::string set = "{"; 
 		std::vector<std::string> st;
 		for (size_t i = 0; i < aSize; i++)
 		{
@@ -1157,7 +1050,6 @@ void FiniteAutomata::getInfo() const
 	}
 	else std::cout << "There are no transitions\n";
 	
-	//moje bi dobavi kolko finalni i kolko nachalni sustoqniq ima
 }
 
 #endif

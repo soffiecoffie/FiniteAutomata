@@ -3,22 +3,9 @@
 #include <iostream>
 #include <vector>
 #include <string>
+using namespace number_utils;
+using namespace string_utils;
 
-bool areAllCharactersFromAlphabet(std::string str, std::vector<char> alphabet)
-{
-	std::cout << str;
-	int size = str.size();
-	int aSize = alphabet.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		for (size_t j = 0; j < aSize; j++)
-		{
-			if (str[i] == alphabet[j]) break;
-			else if (j == (aSize - 1)) return false;
-		}
-	}
-	return true;
-}
 int main()
 {
 	std::vector<char> alphabet = {'a','b'};
@@ -57,44 +44,58 @@ int main()
 	states.push_back(q5);
 	FiniteAutomata fna(alphabet, states, accepting, starting);
 	fna.getInfo();
-	fna.a = 7;
-	//std::cout << "\nDoes the automata contain "<<"\"aabbbbb\"? "<< std::boolalpha << fna.containsWord("aabbbbb")<<std::endl;
+	fna.determine();
+//	fna.removeSinkNodes();
+	fna.getInfo();
+	//fna.a = 7;
+	std::cout << "\nDoes the automata contain "<<"\"aabbbbb\"? "<< std::boolalpha << fna.containsWord("bbbbb")<<std::endl;
 	int a = 5, b = 10, c = 15;
 	a = b = c;
-	//std::cout << a;
-	FiniteAutomata f2(fna.Complement(fna));
-	f2.getInfo();
-	FiniteAutomata f3(f2.Union(f2, fna));
-	FiniteAutomata f4(f2.Intersection(f2, f3));
-	f3.getInfo();
-	f4.getInfo();
-//	FiniteAutomata f2(fna);
+	FiniteAutomata f0(fna.makeOneLetterAutomata('a'));
+	FiniteAutomata f00(fna.makeOneLetterAutomata('b'));
+	FiniteAutomata f000(f00.Concatenation(f0, f00));
+	FiniteAutomata f0000(f00.KleeneStar(f0));
+//	f000.removeEpsilon();
+//	f000.determine();
+//	FiniteAutomata f2(fna.Complement(fna));
+	std::cout<<std::endl;
+	f0000.determine();
+	f0000.removeEpsilon();
+	f0000.getInfo();
+	std::cout << "\nDoes the automata contain word  " << std::boolalpha << f0000.containsWord("aaaaaaaaaaaaaaa") << std::endl;
+
+//	f2.getInfo();
+//	FiniteAutomata f3(f2.Union(f2, fna));
+//	FiniteAutomata f4(f2.Intersection(f2, f3));
+//	f3.getInfo();
+//	f4.getInfo();
+////	FiniteAutomata f2(fna);
+////	f2.a = 2;
+////	fna.Complement(fna);
+////	FiniteAutomata f3;
 //	f2.a = 2;
-//	fna.Complement(fna);
-//	FiniteAutomata f3;
-	f2.a = 2;
-	//f3.a = 3;
-	std::cout << "\n";
-//	f2 = fna.Complement(fna);
-//	f3 = f3.Union(f2, fna);
-	//f3.getInfo();
-
-	std::vector<int> vec{1,2,3,4 };
-	int value = 7;// value to be removed
-	vec.erase(std::remove(vec.begin(), vec.end(), value), vec.end());
-	std::cout << "\n";
-
-	for (size_t i = 0; i < vec.size(); i++)
-	{
-		std::cout << vec[i] << " ";
-	}
-	std::cout << "\n";
-
-	comb(vec, 1);
-	std::string copy = "1234";
-	std::reverse(copy.begin(), copy.end());
-	std::cout << "\n" << copy;
-	std::cout << "\n";
+//	//f3.a = 3;
+//	std::cout << "\n";
+////	f2 = fna.Complement(fna);
+////	f3 = f3.Union(f2, fna);
+//	//f3.getInfo();
+//
+//	std::vector<int> vec{1,2,3,4 };
+//	int value = 7;// value to be removed
+//	vec.erase(std::remove(vec.begin(), vec.end(), value), vec.end());
+//	std::cout << "\n";
+//
+//	for (size_t i = 0; i < vec.size(); i++)
+//	{
+//		std::cout << vec[i] << " ";
+//	}
+//	std::cout << "\n";
+//
+//	comb(vec, 1);
+//	std::string copy = "1234";
+//	std::reverse(copy.begin(), copy.end());
+//	std::cout << "\n" << copy;
+//	std::cout << "\n";
 	return 0;
 }
 //Containing the empty word??
