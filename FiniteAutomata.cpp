@@ -22,6 +22,12 @@ bool FiniteAutomata::areAllCharactersFromAlphabet(const std::string& str) const
 	return true;
 }
 
+/** @brief проверява дали знакът за произволен символ ('?') принадлежи на азбуката */
+bool FiniteAutomata::isRandSymbolInAlphabet() const
+{
+	return areAllCharactersFromAlphabet("j");
+}
+
 /** @brief връща индекса на даден символ в азбуката на автомата, ако не принадлежи на азбуката връща -1 */
 int FiniteAutomata::getCharIndFromAlphabet(const char& ch) const
 {
@@ -649,7 +655,114 @@ FiniteAutomata& FiniteAutomata::operator=(const FiniteAutomata& other)
 
 //not finished - should work with Eps trans
 /** @brief проверява дали от дадено състояние има път с буквите на даден низ до финално състояние */
-bool FiniteAutomata::containsWordFrom(const State* st,const std::string& str) const
+bool FiniteAutomata::containsWordFrom(const State* st, const std::string& str) const
+{
+	if (str.size() == 0 && st->accepting) return true;
+
+	char ch = str[0];
+	int ind = getCharIndFromAlphabet(ch);
+
+	if (ind != -1) {							//Проверявам преходите с текущата буква, ако принадлежи на азбуката
+		int size = st->nextState[ind].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;	  //str.size()-1?
+		}
+	}
+	if (isRandSymbolInAlphabet()) {				//Проверявам преходите със символа за произволен символ, ако е в азбуката
+		ind = getCharIndFromAlphabet('?');
+		int size = st->nextState[ind].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;
+		}
+	}
+	if (emptyStrTransition) {					//Проверявам епсилон преходите, ако има такива
+		ind = alphabet.size() - 1;
+		int size = st->nextState[ind].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (ind != -1 && containsWordFrom(st->nextState[ind][i], str)) return true;
+		}
+	}
+	return false;
+}
+
+
+//not finished - should work with Eps trans
+/** @brief проверява дали от дадено състояние има път с буквите на даден низ до финално състояние */
+/*bool FiniteAutomata::containsWordFrom(const State* st, const std::string& str) const
+{
+	if (str.size() == 0 && st->accepting) return true;
+
+	char ch = str[0];
+	int ind = getCharIndFromAlphabet(ch);
+
+	if (ind != -1 && isRandSymbolInAlphabet()) {
+		int ind3 = -1;
+		if (emptyStrTransition) {
+			ind3 = alphabet.size() - 1; //празната дума винаги е на последно място в азбуката
+		}
+
+		int ind2 = getCharIndFromAlphabet('?');
+		if (st->nextState[ind].size() == 0 && st->nextState[ind2].size() == 0
+			&& (ind3 == -1 || st->nextState[ind3].size() == 0)) return false;
+
+		int size = st->nextState[ind].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;	  //str.size()-1?
+		}
+		size = st->nextState[ind2].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (containsWordFrom(st->nextState[ind2][i], str.substr(1, str.size()))) return true;//str.size()-1?
+		}
+		size = st->nextState[ind3].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (ind3 != -1 && containsWordFrom(st->nextState[ind3][i], str))return true;
+		}
+	}
+	else if (ind != -1 || isRandSymbolInAlphabet()) {
+		
+		if (isRandSymbolInAlphabet()) 
+			ind = getCharIndFromAlphabet('?');
+
+		int ind2 = -1;
+		if (emptyStrTransition) {
+			ind2 = alphabet.size() - 1; //празната дума винаги е на последно място в азбуката
+		}
+
+		if (st->nextState[ind].size() == 0 && (ind2==-1 || st->nextState[ind2].size() == 0)) return false;
+		
+		int size = st->nextState[ind].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (containsWordFrom(st->nextState[ind][i], str.substr(1, str.size()))) return true;
+		}
+		size = st->nextState[ind2].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (ind2 != -1 && containsWordFrom(st->nextState[ind2][i], str)) return true;
+		}
+	}
+	else if (emptyStrTransition) {
+		ind = alphabet.size() - 1;
+		if (st->nextState[ind].size() == 0) return false;
+		int size = st->nextState[ind].size();
+		for (size_t i = 0; i < size; i++)
+		{
+			if (ind != -1 && containsWordFrom(st->nextState[ind][i], str)) return true;
+		}
+	}
+	return false;
+}
+*/
+
+//not finished - should work with Eps trans
+/** @brief проверява дали от дадено състояние има път с буквите на даден низ до финално състояние */
+/*bool FiniteAutomata::containsWordFrom(const State* st,const std::string& str) const
 {
 	if (str.size() == 0 && st->accepting) return true;
 	
@@ -668,7 +781,7 @@ bool FiniteAutomata::containsWordFrom(const State* st,const std::string& str) co
 
 	return false;
 }
-
+*/
 /** @brief проверява дали дадено състояние е начално */
 bool FiniteAutomata::isStarting(const State* st) const
 {
@@ -939,7 +1052,7 @@ std::vector<std::vector<State*>> FiniteAutomata::getStateCombinations(std::vecto
 /** @brief проверява дали дадена дума принадлежи на езика на автомата  */
 bool FiniteAutomata::containsWord(const std::string& str) const
 {
-	if (!areAllCharactersFromAlphabet(str)) return false;
+	if (!areAllCharactersFromAlphabet(str) && !isRandSymbolInAlphabet()) return false;
 	int size = start.size();
 	for (size_t i = 0; i < size; i++)
 	{
@@ -947,6 +1060,21 @@ bool FiniteAutomata::containsWord(const std::string& str) const
 	}
 	return false;
 }
+
+
+
+/** @brief проверява дали дадена дума принадлежи на езика на автомата  */
+/*
+bool FiniteAutomata::containsWord(const std::string& str) const
+{
+	if (!areAllCharactersFromAlphabet(str)) return false;
+	int size = start.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		if (containsWordFrom(start[i], str)) return true;
+	}
+	return false;
+}*/
 
 //ако има състояние с 0 или повече от 1 преходи със съответна буква значи е недетерминиран  tag
 /** @brief проверавя дали автоматът е детерминиран  */

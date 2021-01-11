@@ -20,6 +20,7 @@ class FiniteAutomata
 	bool emptyStrTransition = false; //add check in the find word so you use the last ind as an empt str
 
 	bool areAllCharactersFromAlphabet(const std::string&) const;
+	bool isRandSymbolInAlphabet() const;
 	int getCharIndFromAlphabet(const char&) const;
 	//char getCharFromAlphabetByInd(int) const;//NO
 	int getStateIndFromAllStates(const State&) const;
