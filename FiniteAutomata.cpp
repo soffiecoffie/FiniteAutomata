@@ -51,18 +51,34 @@ int FiniteAutomata::getStateIndFromAllStates(const State& st) const
 	return 0;
 }
 
+/** @brief връща броя на всички преходи  */
+int FiniteAutomata::getCountOfTransitions() const
+{
+	int count = 0;
+	for (size_t i = 0; i < states.size(); i++)
+	{
+		for (size_t j = 0; j < states[i]->nextState.size(); j++)
+		{
+			count += states[i]->nextState[j].size();
+		}
+	}
+	return count;
+}
+
 /** @brief конструктор с параметри */
 FiniteAutomata::FiniteAutomata(const std::vector<char>& alpha, const std::vector<State*>& states, 
-								const std::vector<State*>& accepting, const std::vector<State*>& st)
-							: alphabet(alpha), states(states), acceptingStates(accepting), start(st)
+								const std::vector<State*>& accepting, const std::vector<State*>& st, bool det)
+							: alphabet(alpha), states(states), acceptingStates(accepting), start(st), det(det)
 {
+	if (det && !isDeterministic()) determine();
 }
 
 /** @brief копи конструктор */
-FiniteAutomata::FiniteAutomata(const FiniteAutomata& other): alphabet(other.alphabet), emptyStrTransition(other.emptyStrTransition)
+FiniteAutomata::FiniteAutomata(const FiniteAutomata& other, bool det): alphabet(other.alphabet),
+								emptyStrTransition(other.emptyStrTransition), det(det)
 {
-	//std::cout << "copying "<<other.a<< "   ";
 	copy(other);
+	if (det && !isDeterministic()) determine();
 }
 
 /** @brief деструктор */
@@ -72,9 +88,9 @@ FiniteAutomata::~FiniteAutomata()
 }
 
 /** @brief връща автомат, който е допълнението на даден автомат */
-FiniteAutomata FiniteAutomata::Complement(const FiniteAutomata& automata) const
+FiniteAutomata FiniteAutomata::Complement() const
 {
-	FiniteAutomata result(automata);
+	FiniteAutomata result(*this);
 	//Ако автоматът е недетерминиран, първо трябва да се детерминира
 	if (!result.isDeterministic()) {
 		result.determine();
@@ -84,12 +100,15 @@ FiniteAutomata FiniteAutomata::Complement(const FiniteAutomata& automata) const
 		if (result.states[i]->accepting == true) result.states[i]->accepting = false;
 		else result.states[i]->accepting = true;
 	}
+
+	if (det && !result.isDeterministic()) result.determine();
 	return result;
 }
 
 /** @brief връща автомат, който е обединението на 2 дадени автомата */
-FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutomata& a2) const
+FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a2) const
 {
+	FiniteAutomata a1(*this);
 	FiniteAutomata result;
 	result.states = a1.states;
 	result.states.insert(result.states.end(), a2.states.begin(), a2.states.end());
@@ -210,27 +229,31 @@ FiniteAutomata FiniteAutomata::Union(const FiniteAutomata& a1, const FiniteAutom
 				st->nextState[i].push_back(res.states[ind]);
 			}
 		}
-//		v.clear();
 	}
 
 	res.start.push_back(st);
 	res.states.push_back(st);
 
-
-	//You need to determine the automata first!!
+	if (det && !res.isDeterministic()) res.determine();
 	return res;
 }
 
 /** @brief връща автомат, който е сечението на 2 дадени автомата */
-FiniteAutomata FiniteAutomata::Intersection(const FiniteAutomata& a1, const FiniteAutomata& a2) const
+FiniteAutomata FiniteAutomata::Intersection(const FiniteAutomata& a2) const
 {
-	//determine first
-	return Complement(Union(Complement(a1), Complement(a2)));
+	//Intersection(a1, a2) = Complement(Union(Complement(a1), Complement(a2)));
+
+	FiniteAutomata result( ( (this->Complement()).Union(a2.Complement()) ).Complement() );
+
+	if (det && !result.isDeterministic()) result.determine();
+	return result;   
 }
 
 /** @brief връща автомат, който е конкатенацията на 2 дадени автомата */
-FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const FiniteAutomata& a2) const
+FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a2) const
 {
+	FiniteAutomata a1(*this);
+
 	FiniteAutomata result;
 	result.states = a1.states;
 	result.states.insert(result.states.end(), a2.states.begin(), a2.states.end());
@@ -297,7 +320,7 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 		}
 		res.states[i]->nextState = final;
 
-		temp.clear(); //need i clear it ?
+		temp.clear();
 		final.clear();
 	}
 
@@ -341,17 +364,17 @@ FiniteAutomata FiniteAutomata::Concatenation(const FiniteAutomata& a1, const Fin
 		}
 	}
 
-	//determine
+	if (det && !res.isDeterministic()) res.determine();
 	return res;
 }
 
 /** @brief връща автомат, който е итерацията на даден автомат */
-FiniteAutomata FiniteAutomata::KleeneStar(const FiniteAutomata& q) const
+FiniteAutomata FiniteAutomata::KleeneStar() const
 {
-	FiniteAutomata result(q);
+	FiniteAutomata result(*this);
 
 	//добавям епсилон преход за всяко състояние 
-	if (!q.emptyStrTransition)
+	if (!emptyStrTransition)
 	{
 		result.alphabet.push_back('@');
 		result.emptyStrTransition = true;
@@ -382,9 +405,9 @@ FiniteAutomata FiniteAutomata::KleeneStar(const FiniteAutomata& q) const
 		if (i == aResSize - 1)   //последният символ в азбуката е празната дума
 		{
 			int ind;
-			for (size_t j = 0; j < q.start.size(); j++)
+			for (size_t j = 0; j < start.size(); j++)
 			{
-				ind = q.getStateIndFromAllStates(*q.start[j]);
+				ind = getStateIndFromAllStates(*start[j]);
 				st->nextState[i].push_back(result.states[ind]);
 			}
 		}
@@ -395,8 +418,7 @@ FiniteAutomata FiniteAutomata::KleeneStar(const FiniteAutomata& q) const
 	result.start.push_back(st);
 	result.acceptingStates.push_back(st);
 
-
-	//determine?
+	if (det && !result.isDeterministic()) result.determine();
 	return result;
 }
 
@@ -436,7 +458,6 @@ void FiniteAutomata::removeEpsilon()
 			if (v2->accepting) v1->accepting = true;
 		}
 		v1->nextState[lastInd].clear();			//clears @ transition array
-		//v1->nextState.pop maybe instead of clear?
 	}
 
 	alphabet.pop_back();						//премахвам празната дума от азбуката
@@ -510,20 +531,19 @@ void FiniteAutomata::determine()
 			}
 		}
 	}
-	std::cout << "accepting ---  " << acceptingStates.size() << " -----";
-	//добавям преходите
-	for (size_t i = 0; i < newStSize; i++)
-	{
 
-		for (size_t k = 0; k < alphabet.size(); k++)
+	//добавям преходите
+	for (int i = 0; i < newStSize; i++)
+	{
+		for (int k = 0; k < alphabet.size(); k++)
 		{
 			std::vector<State*> v;
-			for (size_t j = 0; j < newStates[i].size(); j++)
+			for (int j = 0; j < newStates[i].size(); j++)
 			{
-				for (size_t m = 0; m < newStates[i][j]->nextState[k].size(); m++)
+				for (int m = 0; m < newStates[i][j]->nextState[k].size(); m++)
 				{
 					bool repeats = 0;
-					for (size_t h = 0; h < v.size(); h++)
+					for (int h = 0; h < v.size(); h++)
 					{
 						if (newStates[i][j]->nextState[k][m] == v[h]) {
 							repeats = true;
@@ -533,29 +553,32 @@ void FiniteAutomata::determine()
 					if(!repeats)
 						v.push_back(newStates[i][j]->nextState[k][m]);
 				}
-
 			}
 			int ind = -1;
 			if (!v.empty()) {
-				for (size_t t = 0; t < newStSize; t++)
+				for (int t = 0; t < newStSize; t++)
 				{
 					if (newStates[t].size() == v.size()) {
 						int count = 0;
-						for (size_t w = 0; w < newStates[t].size(); w++)
+						for (int w = 0; w < newStates[t].size(); w++)
 						{
-							for (size_t p = 0; p < v.size(); p++)
+							for (int p = 0; p < v.size(); p++)
 							{
 								//всички елементи във v са различни
-								if (newStates[t][w] == v[p]) ++count;
+								if (newStates[t][w] == v[p]) {
+									++count; 
+									break;
+								}
 							}
-						}
+						} 
 						if (count == v.size()) {
 							ind = t;
+							count = 0;
 							break;
 						}
 					}
 				}
-				if (ind == -1)std::cout << "bad bad something go wrong fix fix";
+				if (ind == -1) std::cout << "bad something went wrong";
 				v.clear();
 				states[i]->nextState[k].push_back(states[ind]);	
 			}
@@ -568,16 +591,6 @@ void FiniteAutomata::determine()
 
 	//премахвам недостижимите състояния
 	removeSinkNodes();
-	
-	////освобождавам динамичната памет
-	//for (size_t i = 0; i < newStSize; i++)
-	//{
-	//	for (size_t j = 0;  j < newStates[i].size();  j++)
-	//	{
-	//		delete newStates[i][j];
-	//	}
-	//}
-	//newStates.clear();
 }
 
 /** @brief връща автомат, създаден от даден регулярен израз */
@@ -593,7 +606,7 @@ FiniteAutomata FiniteAutomata::regexToAutomata(std::string regex)
 	if (curCh == '*') {
 		--curInd;
 		right = getNextAutomata(regex, curInd);
-		rightA = KleeneStar(regexToAutomata(right));
+		rightA = regexToAutomata(right).KleeneStar();
 	}
 	else {
 		right = getNextAutomata(regex, curInd);
@@ -605,7 +618,9 @@ FiniteAutomata FiniteAutomata::regexToAutomata(std::string regex)
 			rightA = regexToAutomata(right);
 		}
 	}
-	if (curInd < 0) return rightA;
+	if (curInd < 0) 	
+		return rightA;
+	
 	curCh = regex[curInd];
 
 	std::string str = regex;
@@ -616,21 +631,19 @@ FiniteAutomata FiniteAutomata::regexToAutomata(std::string regex)
 		case '+':
 			str.erase(str.begin() + curInd, str.end());
 			--curInd;
-			result = Union(regexToAutomata(str), rightA);
+			result = regexToAutomata(str).Union(rightA);
 			return result;
-			//break;
 		case '&':
 			str.erase(str.begin() + curInd, str.end());
 			--curInd;
-			result = Intersection(regexToAutomata(str), rightA);
+			result = regexToAutomata(str).Intersection(rightA);
 			return result;
-			//break;
 		case '.':
 			result = rightA;
 			do {
 				--curInd;
 				left = getNextAutomata(regex, curInd);
-				result = Concatenation(regexToAutomata(left), result);
+				result = regexToAutomata(left).Concatenation(result);
 				if (curInd < 0) return result;
 				curCh = regex[curInd];
 			} while (curCh == '.');
@@ -640,6 +653,28 @@ FiniteAutomata FiniteAutomata::regexToAutomata(std::string regex)
 	} while (curInd >= 0);
 
 	return result;
+}
+
+/** @brief  извежда всички редове, които се разпознават от регулярния израз  */
+void FiniteAutomata::printAllSentencesFromRegex(std::string filename, std::string regex)
+{
+	std::ifstream in(filename);
+	std::string temp;
+
+	if (!in) std::cout << "Can't open file " << filename << "!\n";
+	else {
+		int size;
+		in >> size;
+		in.ignore(1, '\n');
+		FiniteAutomata a;
+		a = a.regexToAutomata(regex);
+
+		for (int i = 0; i < size; i++)
+		{
+			getline(in, temp, '\n');
+			if (a.containsWord(temp))std::cout << temp << "\n";
+		}
+	}
 }
 
 /** @brief оператор = */
@@ -805,10 +840,9 @@ std::string FiniteAutomata::getNextAutomata(std::string str, int& curInd)
 {
 	std::string result;
 
-	if (!isOperation(str[curInd]) || str[curInd] != ')') {
+	if (!isOperation(str[curInd]) && str[curInd] != ')') {
 		result.push_back(str[curInd]);
-		--curInd; //is curInd changing 
-		//result = str[curInd];
+		--curInd; 
 		return result;
 	}
 	else if (str[curInd] == ')') {
@@ -821,14 +855,15 @@ std::string FiniteAutomata::getNextAutomata(std::string str, int& curInd)
 				std::reverse(result.begin(), result.end());
 				return result;
 			}
-			result.push_back(str[curInd]);
+			result.push_back(str[i]);
 		}
 	}
 	else if (str[curInd] == '*') {
 		--curInd;
 		//добавям скоби, защото ако имам (a+b)* ще стане a+b*, което е грешно
 		result.push_back('(');
-		result = getNextAutomata(str, curInd);
+		std::string next = getNextAutomata(str, curInd);
+		result.insert(result.end(), next.begin(), next.end());
 		result.push_back(')');
 		result.push_back('*');
 		return result;
@@ -1049,6 +1084,100 @@ void FiniteAutomata::getInfo() const
 	}
 	else std::cout << "There are no transitions\n";
 	
+}
+
+/** @brief предефиниция на оператор>> за автомати*/
+std::istream& operator>>(std::istream& in, FiniteAutomata& a)
+{
+	int statesSize, size, alpSize;
+	in >> statesSize;
+	for (size_t i = 0; i < statesSize; i++)
+	{
+		a.states.push_back(new State());
+	}
+	in >> size;
+	in.ignore(2, '\n');
+	in >> alpSize;
+	char ch;
+	for (size_t i = 0; i < alpSize; i++)
+	{
+		in >> ch;
+		a.alphabet.push_back(ch);
+		for (size_t j = 0; j < statesSize; j++)
+		{
+			a.states[j]->nextState.push_back(std::vector<State*>());
+		}
+	}
+
+	in.ignore(1, '\n');
+	in.ignore(1, '\n');
+	
+	int num1, num2;
+	for (size_t i = 0; i < size; i++)
+	{
+		in >> num1 >> ch >> num2;
+		int alpInd = a.getCharIndFromAlphabet(ch);
+		int q1Ind = num1 - 1;
+		int q2Ind = num2 - 1;
+		a.states[q1Ind]->nextState[alpInd].push_back(a.states[q2Ind]);
+	}
+	in.ignore(1, '\n');
+	int startSize, accSize;
+	in >> startSize >> accSize;
+	for (size_t i = 0; i < startSize; i++)
+	{
+		in >> num1;
+		a.start.push_back(a.states[num1 - 1]);
+	}
+	for (size_t i = 0; i < accSize; i++)
+	{
+		in >> num1;
+		a.acceptingStates.push_back(a.states[num1 - 1]);
+		a.states[num1 - 1]->accepting = true;
+	}
+	return in;
+}
+
+/** @brief предефиниция на оператор<< за автомати*/
+std::ostream& operator<<(std::ostream& out, const FiniteAutomata& a)
+{
+	out << a.states.size() << " " << a.getCountOfTransitions() << "\n";
+	out << a.alphabet.size() << " ";
+	for (size_t i = 0; i < a.alphabet.size(); i++)
+	{
+		out << a.alphabet[i] << " ";
+	}
+	out <<"\n\n";
+	int q1, q2;
+	for (size_t i = 0; i < a.states.size(); i++)
+	{
+		q1 = i;
+		for (size_t j = 0; j < a.states[i]->nextState.size(); j++)
+		{
+			for (size_t k = 0; k < a.states[i]->nextState[j].size(); k++)
+			{
+				q2 = a.getStateIndFromAllStates(*a.states[i]->nextState[j][k]);
+				out << (q1+1) << " " << a.alphabet[j] << " " << (q2+1) << "\n";
+			}
+		}
+	}
+
+	out << "\n" << a.start.size() << " " << a.acceptingStates.size() << "\n";
+	for (size_t i = 0; i < a.start.size(); i++)
+	{
+		q1 = a.getStateIndFromAllStates(*a.start[i]) + 1;
+
+		out << q1 << " ";
+	}
+
+	out << "\n";
+	for (size_t i = 0; i < a.acceptingStates.size(); i++)
+	{
+		q1 = a.getStateIndFromAllStates(*a.acceptingStates[i]) + 1;
+
+		out << q1 << " ";
+	}
+	return out;
 }
 
 #endif
