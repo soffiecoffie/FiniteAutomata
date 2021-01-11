@@ -594,11 +594,9 @@ FiniteAutomata FiniteAutomata::regexToAutomata(std::string regex)
 		--curInd;
 		right = getNextAutomata(regex, curInd);
 		rightA = KleeneStar(regexToAutomata(right));
-		curCh = regex[curInd];
 	}
 	else {
 		right = getNextAutomata(regex, curInd);
-		curCh = regex[curInd];
 
 		if (right.size() == 1) {
 			rightA = makeOneLetterAutomata(right[0]);
@@ -608,6 +606,7 @@ FiniteAutomata FiniteAutomata::regexToAutomata(std::string regex)
 		}
 	}
 	if (curInd < 0) return rightA;
+	curCh = regex[curInd];
 
 	std::string str = regex;
 	std::string left;
@@ -807,9 +806,9 @@ std::string FiniteAutomata::getNextAutomata(std::string str, int& curInd)
 	std::string result;
 
 	if (!isOperation(str[curInd]) || str[curInd] != ')') {
+		result.push_back(str[curInd]);
 		--curInd; //is curInd changing 
 		//result = str[curInd];
-		result.push_back(str[curInd]);
 		return result;
 	}
 	else if (str[curInd] == ')') {

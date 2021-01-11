@@ -29,18 +29,18 @@ class FiniteAutomata
 	bool isSink(const State*) const;			 
 	bool areThereSinks() const;
 	void removeSinkNodes();
-//	FiniteAutomata makeOneLetterAutomata(char) const;
+	FiniteAutomata makeOneLetterAutomata(char) const;
 	std::string getNextAutomata(std::string, int& curInd);
 	bool isOperation(char) const;
 	void del();
 	void copy(const FiniteAutomata&);
 	std::vector<std::vector<State*>> getStateCombinations(std::vector<State*> arr, int k);
 public:
-	FiniteAutomata(const std::vector<char>&, const std::vector<State*>&, const std::vector<State*>&, const std::vector<State*>&);
+	FiniteAutomata(const std::vector<char>&, const std::vector<State*>&, const std::vector<State*>&,
+				   const std::vector<State*>&);
 	FiniteAutomata(const FiniteAutomata&);
 	FiniteAutomata() {};
 	~FiniteAutomata();
-	FiniteAutomata makeOneLetterAutomata(char) const;
 
 	FiniteAutomata Complement(const FiniteAutomata&) const;
 	FiniteAutomata Union(const FiniteAutomata&, const FiniteAutomata&) const;
@@ -49,7 +49,7 @@ public:
 	FiniteAutomata KleeneStar(const FiniteAutomata&) const;
 	void removeEpsilon();
 	void determine();
-	FiniteAutomata regexToAutomata(std::string);//test
+	FiniteAutomata regexToAutomata(std::string);
 	FiniteAutomata& operator=(const FiniteAutomata&);
 
 	bool containsWord(const std::string&) const;
